@@ -25,7 +25,7 @@ spec:
         runAsUser: 1000
       containers:
       - name: bharata-katha-app
-        image: avisubir/bharata-katha-app:1.0.20
+        image: avisubir/bharata-katha-app:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
