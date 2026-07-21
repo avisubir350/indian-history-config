@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bharata-katha-app
+  namespace: bharata-katha
+  labels:
+    app: bharata-katha-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bharata-katha-app
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: bharata-katha-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: bharata-katha-app
+        image: avisubir/bharata-katha-app:1.0.20
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DB_URL
+          value: "jdbc:mysql://bharata-katha-db.bharata-katha.svc.cluster.local:3306/indian_history_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: bharata-katha-secret
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bharata-katha-secret
+              key: db-password
+        - name: JAVA_OPTS
+          value: "-Xms256m -Xmx512m -XX:+UseG1GC"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1000m"
+        startupProbe:
+          httpGet:
+            path: /
+            port: 8080
+          failureThreshold: 12
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 20
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bharata-katha-app-pdb
+  namespace: bharata-katha
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: bharata-katha-app
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bharata-katha-app-hpa
+  namespace: bharata-katha
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bharata-katha-app
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bharata-katha-db
+  namespace: bharata-katha
+spec:
+  selector:
+    app: bharata-katha-db
+  ports:
+  - protocol: TCP
+    port: 3306
+    targetPort: 3306
+  clusterIP: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bharata-katha-app
+  namespace: bharata-katha
+spec:
+  selector:
+    app: bharata-katha-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8080
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bharata-katha-app-nodeport
+  namespace: bharata-katha
+spec:
+  selector:
+    app: bharata-katha-app
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 8080
+    nodePort: 30080
