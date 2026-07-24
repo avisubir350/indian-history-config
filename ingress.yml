@@ -10,7 +10,6 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: bharata-katha.local
     http:
       paths:
       - path: /
